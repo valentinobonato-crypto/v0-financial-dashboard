@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { getStockPriceARS, getDolarBlue } from "@/lib/prices";
+import { getDolarBlue } from "@/lib/prices";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { KPICards } from "@/components/dashboard/kpi-cards";
 import { PortfolioChart } from "@/components/dashboard/portfolio-chart";
@@ -20,59 +20,16 @@ export default function Dashboard() {
   });
   const [chartData, setChartData] = useState<{ date: string; value: number }[]>([]);
   const [loading, setLoading] = useState(true);
-  const [updatingPrices, setUpdatingPrices] = useState(false);
   const [dolarBlue, setDolarBlue] = useState<number | null>(null);
-
-  // Función para actualizar precios desde Yahoo Finance
-  const updatePrices = useCallback(async () => {
-    setUpdatingPrices(true);
-    try {
-      // Obtener todos los activos
-      const { data: assets } = await supabase
-        .from("assets")
-        .select("id, symbol, type");
-
-      if (!assets || assets.length === 0) {
-        setUpdatingPrices(false);
-        return;
-      }
-
-      // Obtener dólar blue
-      const dolar = await getDolarBlue();
-      if (dolar) {
-        setDolarBlue(dolar);
-      }
-
-      // Actualizar precio de cada activo
-      for (const asset of assets) {
-        // Solo actualizamos si es un Cedear (tipo stock o cedear)
-        if (asset.type === "stock" || asset.type === "cedear") {
-          const { priceARS } = await getStockPriceARS(asset.symbol);
-          
-          if (priceARS) {
-            await supabase
-              .from("assets")
-              .update({ 
-                current_price: priceARS, 
-                last_updated: new Date().toISOString() 
-              })
-              .eq("id", asset.id);
-          }
-        }
-      }
-
-      // Recargar datos después de actualizar precios
-      await loadData();
-    } catch (error) {
-      console.error("Error actualizando precios:", error);
-    } finally {
-      setUpdatingPrices(false);
-    }
-  }, []);
 
   // Función para cargar datos
   const loadData = useCallback(async () => {
     try {
+      // Obtener dólar blue para referencia
+      const dolar = await getDolarBlue();
+      if (dolar) setDolarBlue(dolar);
+
+      // Cargar posiciones
       const { data: holdings, error } = await supabase
         .from("portfolio_holdings")
         .select(`
@@ -93,10 +50,12 @@ export default function Dashboard() {
         quantity: Number(holding.total_quantity),
         avgPurchasePrice: Number(holding.average_cost),
         currentPrice: Number(holding.asset?.current_price) || 0,
+        assetId: holding.asset?.id,
       }));
 
       setPositions(positionsData);
 
+      // Calcular KPIs
       let totalValue = 0;
       let totalInvested = 0;
 
@@ -115,6 +74,7 @@ export default function Dashboard() {
         annualizedReturn: pnlPercentage,
       });
 
+      // Cargar historial
       const { data: history } = await supabase
         .from("portfolio_history")
         .select("*")
@@ -131,27 +91,19 @@ export default function Dashboard() {
       }
     } catch (err) {
       console.error("Error:", err);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  // Cargar datos y actualizar precios al inicio
   useEffect(() => {
-    async function init() {
-      setLoading(true);
-      await loadData();
-      await updatePrices(); // Actualizar precios automáticamente
-      setLoading(false);
-    }
-    init();
-  }, [loadData, updatePrices]);
+    loadData();
+  }, [loadData]);
 
   if (loading) {
     return (
       <main className="bg-background min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg">Cargando datos...</p>
-          <p className="text-sm text-muted-foreground mt-2">Actualizando precios del mercado</p>
-        </div>
+        <p className="text-lg">Cargando datos...</p>
       </main>
     );
   }
@@ -163,14 +115,12 @@ export default function Dashboard() {
           <DashboardHeader 
             userId={USER_ID} 
             onDataChange={loadData}
-            onUpdatePrices={updatePrices}
-            updatingPrices={updatingPrices}
             dolarBlue={dolarBlue}
           />
           <KPICards data={kpiData} />
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
             <PortfolioChart data={chartData} />
-            <PositionsTable positions={positions} />
+            <PositionsTable positions={positions} onPriceUpdate={loadData} />
           </div>
         </div>
       </div>
