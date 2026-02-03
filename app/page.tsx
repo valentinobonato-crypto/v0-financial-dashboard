@@ -17,17 +17,27 @@ export default function Dashboard() {
     pnl: 0,
     pnlPercentage: 0,
     annualizedReturn: 0,
+    cashAvailable: 0,
   });
   const [chartData, setChartData] = useState<{ date: string; value: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [dolarBlue, setDolarBlue] = useState<number | null>(null);
 
-  // Función para cargar datos
   const loadData = useCallback(async () => {
     try {
-      // Obtener dólar blue para referencia
+      // Obtener dólar blue
       const dolar = await getDolarBlue();
       if (dolar) setDolarBlue(dolar);
+
+      // Cargar efectivo disponible
+      const { data: cashData } = await supabase
+        .from("cash_balance")
+        .select("amount")
+        .eq("user_id", USER_ID)
+        .eq("currency", "ARS")
+        .single();
+
+      const cashAvailable = cashData?.amount ? Number(cashData.amount) : 0;
 
       // Cargar posiciones
       const { data: holdings, error } = await supabase
@@ -72,6 +82,7 @@ export default function Dashboard() {
         pnl,
         pnlPercentage,
         annualizedReturn: pnlPercentage,
+        cashAvailable,
       });
 
       // Cargar historial
