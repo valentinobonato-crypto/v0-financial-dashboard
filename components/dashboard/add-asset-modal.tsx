@@ -38,7 +38,7 @@ export function AddAssetModal({ userId, onAssetAdded }: AddAssetModalProps) {
           name: formData.name,
           type: formData.type,
           current_price: parseFloat(formData.currentPrice),
-          currency: "USD",
+          currency: "ARS",
         })
         .select()
         .single();
@@ -161,7 +161,7 @@ export function AddAssetModal({ userId, onAssetAdded }: AddAssetModalProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="avgPrice">Precio promedio compra ($)</Label>
+              <Label htmlFor="avgPrice">Precio promedio compra (ARS)</Label>
               <Input
                 id="avgPrice"
                 type="number"
@@ -175,7 +175,7 @@ export function AddAssetModal({ userId, onAssetAdded }: AddAssetModalProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="currentPrice">Precio actual ($)</Label>
+            <Label htmlFor="currentPrice">Precio actual (ARS)</Label>
             <Input
               id="currentPrice"
               type="number"
