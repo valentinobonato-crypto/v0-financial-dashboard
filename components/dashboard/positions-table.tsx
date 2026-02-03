@@ -25,15 +25,15 @@ interface PositionsTableProps {
 }
 
 function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("es-MX", {
+  return new Intl.NumberFormat("es-AR", {
     style: "currency",
-    currency: "USD",
+    currency: "ARS",
     minimumFractionDigits: 2,
   }).format(value);
 }
 
 function formatNumber(value: number): string {
-  return new Intl.NumberFormat("es-MX", {
+  return new Intl.NumberFormat("es-AR", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 4,
   }).format(value);
