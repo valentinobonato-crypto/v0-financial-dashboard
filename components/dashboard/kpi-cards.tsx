@@ -15,9 +15,9 @@ interface KPICardsProps {
 }
 
 function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("es-MX", {
+  return new Intl.NumberFormat("es-AR", {
     style: "currency",
-    currency: "USD",
+    currency: "ARS",
     minimumFractionDigits: 2,
   }).format(value);
 }
