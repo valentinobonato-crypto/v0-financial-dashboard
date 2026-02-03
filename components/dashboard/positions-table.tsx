@@ -18,8 +18,9 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
-import { TrendingUp, TrendingDown, Pencil } from "lucide-react";
+import { TrendingUp, TrendingDown, Pencil, Trash2 } from "lucide-react";
 
 export interface Position {
   id: string;
@@ -53,8 +54,10 @@ function formatNumber(value: number): string {
 
 export function PositionsTable({ positions, onPriceUpdate }: PositionsTableProps) {
   const [editingPosition, setEditingPosition] = useState<Position | null>(null);
+  const [deletingPosition, setDeletingPosition] = useState<Position | null>(null);
   const [newPrice, setNewPrice] = useState("");
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   async function handleSavePrice() {
     if (!editingPosition?.assetId || !newPrice) return;
@@ -85,6 +88,40 @@ export function PositionsTable({ positions, onPriceUpdate }: PositionsTableProps
     }
   }
 
+  async function handleDelete() {
+    if (!deletingPosition) return;
+    
+    setDeleting(true);
+    try {
+      // Primero eliminar el holding
+      const { error: holdingError } = await supabase
+        .from("portfolio_holdings")
+        .delete()
+        .eq("id", deletingPosition.id);
+
+      if (holdingError) {
+        console.error("Error eliminando holding:", holdingError);
+        alert("Error al eliminar la posición");
+        return;
+      }
+
+      // Luego eliminar el activo
+      if (deletingPosition.assetId) {
+        await supabase
+          .from("assets")
+          .delete()
+          .eq("id", deletingPosition.assetId);
+      }
+
+      setDeletingPosition(null);
+      if (onPriceUpdate) onPriceUpdate();
+    } catch (err) {
+      console.error("Error:", err);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
     <>
       <Card className="border-border/50 bg-card">
@@ -112,7 +149,7 @@ export function PositionsTable({ positions, onPriceUpdate }: PositionsTableProps
                 <TableHead className="text-muted-foreground text-right font-medium">
                   P&L
                 </TableHead>
-                <TableHead className="text-muted-foreground font-medium w-12">
+                <TableHead className="text-muted-foreground font-medium w-24">
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -179,16 +216,26 @@ export function PositionsTable({ positions, onPriceUpdate }: PositionsTableProps
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setEditingPosition(position);
-                          setNewPrice(position.currentPrice.toString());
-                        }}
-                      >
-                        <Pencil className="size-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEditingPosition(position);
+                            setNewPrice(position.currentPrice.toString());
+                          }}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeletingPosition(position)}
+                          className="text-danger hover:text-danger hover:bg-danger/10"
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -225,6 +272,30 @@ export function PositionsTable({ positions, onPriceUpdate }: PositionsTableProps
                 {saving ? "Guardando..." : "Guardar"}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para confirmar eliminación */}
+      <Dialog open={!!deletingPosition} onOpenChange={() => setDeletingPosition(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Eliminar {deletingPosition?.ticker}</DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro que querés eliminar esta posición? Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={() => setDeletingPosition(null)}>
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDelete} 
+              disabled={deleting}
+            >
+              {deleting ? "Eliminando..." : "Eliminar"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
