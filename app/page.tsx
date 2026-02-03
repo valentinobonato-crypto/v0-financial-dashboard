@@ -128,7 +128,7 @@ export default function Dashboard() {
             onDataChange={loadData}
             dolarBlue={dolarBlue}
           />
-          <KPICards data={kpiData} />
+          <KPICards data={kpiData} userId={USER_ID} onCashUpdate={loadData} />
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
             <PortfolioChart data={chartData} />
             <PositionsTable positions={positions} onPriceUpdate={loadData} />
