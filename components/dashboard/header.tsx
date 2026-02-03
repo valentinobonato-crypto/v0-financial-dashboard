@@ -1,9 +1,15 @@
 "use client";
 
 import { OperationModal } from "./operation-modal";
+import { AddAssetModal } from "./add-asset-modal";
 import { LineChart } from "lucide-react";
 
-export function DashboardHeader() {
+interface DashboardHeaderProps {
+  userId?: string;
+  onDataChange?: () => void;
+}
+
+export function DashboardHeader({ userId, onDataChange }: DashboardHeaderProps) {
   return (
     <header className="border-border/50 flex flex-col gap-4 border-b pb-6 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-3">
@@ -19,11 +25,17 @@ export function DashboardHeader() {
           </p>
         </div>
       </div>
-      <OperationModal
-        onSubmit={(data) => {
-          console.log("Nueva operacion:", data);
-        }}
-      />
+      <div className="flex gap-2">
+        {userId && onDataChange && (
+          <AddAssetModal userId={userId} onAssetAdded={onDataChange} />
+        )}
+        <OperationModal
+          onSubmit={(data) => {
+            console.log("Nueva operacion:", data);
+            if (onDataChange) onDataChange();
+          }}
+        />
+      </div>
     </header>
   );
 }
