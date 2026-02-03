@@ -1,7 +1,8 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Wallet, BarChart3, Banknote } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, BarChart3 } from "lucide-react";
+import { CashBalanceCard } from "./cash-balance-card";
 
 interface KPIData {
   totalValue: number;
@@ -13,6 +14,8 @@ interface KPIData {
 
 interface KPICardsProps {
   data: KPIData;
+  userId?: string;
+  onCashUpdate?: () => void;
 }
 
 function formatCurrency(value: number): string {
@@ -28,7 +31,7 @@ function formatPercentage(value: number): string {
   return `${sign}${value.toFixed(2)}%`;
 }
 
-export function KPICards({ data }: KPICardsProps) {
+export function KPICards({ data, userId, onCashUpdate }: KPICardsProps) {
   const isPositive = data.pnl >= 0;
   const totalPatrimony = data.totalValue + (data.cashAvailable || 0);
 
@@ -70,23 +73,28 @@ export function KPICards({ data }: KPICardsProps) {
         </CardContent>
       </Card>
 
-      <Card className="border-border/50 bg-card">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-muted-foreground text-sm font-medium">
-                Efectivo Disponible
-              </p>
-              <p className="text-foreground text-2xl font-bold tracking-tight">
-                {formatCurrency(data.cashAvailable || 0)}
-              </p>
+      {userId && onCashUpdate ? (
+        <CashBalanceCard 
+          amount={data.cashAvailable || 0} 
+          userId={userId} 
+          onUpdate={onCashUpdate} 
+        />
+      ) : (
+        <Card className="border-border/50 bg-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-sm font-medium">
+                  Efectivo Disponible
+                </p>
+                <p className="text-foreground text-2xl font-bold tracking-tight">
+                  {formatCurrency(data.cashAvailable || 0)}
+                </p>
+              </div>
             </div>
-            <div className="bg-secondary rounded-lg p-3">
-              <Banknote className="text-muted-foreground size-5" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="border-border/50 bg-card">
         <CardContent className="pt-6">
