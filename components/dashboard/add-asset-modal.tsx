@@ -127,6 +127,7 @@ export function AddAssetModal({ userId, onAssetAdded }: AddAssetModalProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="cedear">Cedear</SelectItem>
                   <SelectItem value="crypto">Crypto</SelectItem>
                   <SelectItem value="stock">Acción</SelectItem>
                   <SelectItem value="etf">ETF</SelectItem>
